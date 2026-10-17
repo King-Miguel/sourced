@@ -39,13 +39,23 @@ npm install
 1. Go to [supabase.com](https://supabase.com) and create a new project (free tier is fine).
 2. Open the SQL Editor in the Supabase dashboard.
 3. Paste and run **`db/migrations/0001_init.sql`** first. It enables the
-   `vector` extension and creates `workspaces`, `workspace_members`,
-   `documents`, `chunks`, `unanswered_queries`, and the `match_chunks`
-   similarity search function. RLS is enabled on every table with no
-   policies, the app talks to Postgres with the service role key only.
+   `vector` extension, creates `workspaces`, `workspace_members`,
+   `documents`, `chunks`, `unanswered_queries`, the `match_chunks`
+   similarity search function, and grants `service_role` access to all of
+   it. RLS is enabled on every table with no policies, the app talks to
+   Postgres with the service role key only.
 4. Paste and run **`db/migrations/0002_seed_workspace.sql`** next. It inserts
    the single demo workspace row with a fixed id that the app has hardcoded
    (`DEFAULT_WORKSPACE_ID` in `src/lib/constants.ts`).
+5. Paste and run **`db/migrations/0003_grants.sql`** last. It's a safety net:
+   Supabase stopped auto-granting table access to `anon`/`authenticated`/
+   `service_role` on new projects starting May 30, 2026 (enforced on every
+   project since October 30, 2026), so without an explicit `GRANT`, even the
+   service role key gets `permission denied for table X`, RLS bypass does
+   not skip that separate, earlier check. `0001_init.sql` already includes
+   this grant, so running `0003` again is redundant but harmless (`GRANT` is
+   idempotent). Run it anyway, in case your project predates that fix or you
+   ever re-run migrations out of order.
 
 No vector index (HNSW) is created yet, on purpose. Cosine similarity search
 works fine without one at small scale. Once there are real rows, a follow-up

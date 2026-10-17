@@ -84,6 +84,22 @@ alter table unanswered_queries enable row level security;
 -- Intentionally no policies: only the service role (server-side, bypasses
 -- RLS) reads or writes these tables in this slice.
 
+-- Supabase no longer auto-grants table access to anon/authenticated/
+-- service_role on new projects (platform default since May 30, 2026,
+-- enforced on all projects since October 30, 2026). service_role bypassing
+-- RLS does not skip this separate, earlier privilege check, so without an
+-- explicit grant even the service role key gets "permission denied for
+-- table X". This app only ever connects as service_role.
+grant usage on schema public to service_role;
+
+grant select, insert, update, delete on table
+  workspaces,
+  workspace_members,
+  documents,
+  chunks,
+  unanswered_queries
+to service_role;
+
 -- Similarity search used by the ask endpoint. Cosine distance via `<=>`.
 -- 1 - distance = cosine similarity for the threshold check in the app.
 create or replace function match_chunks(
@@ -116,3 +132,5 @@ as $$
   order by c.embedding <=> query_embedding
   limit match_count;
 $$;
+
+grant execute on function match_chunks(vector, uuid, int) to service_role;
