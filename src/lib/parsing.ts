@@ -1,4 +1,6 @@
 import "server-only";
+import { createRequire } from "node:module";
+import { pathToFileURL } from "node:url";
 
 export interface ParsedPage {
   pageNumber: number;
@@ -28,9 +30,20 @@ export async function parsePdfPages(buffer: Buffer): Promise<ParsedPage[]> {
   // entirely. This import is cached after the first call, so repeating it
   // on every upload is cheap.
   await import("pdfjs-dist/legacy/build/pdf.worker.mjs");
-  const { getDocument } = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
-  const loadingTask = getDocument({
+  // Belt-and-suspenders: also point workerSrc at the worker file's real,
+  // independently-resolved location on disk (via Node's own require
+  // resolution, not whatever path a bundler moved pdf.mjs's chunk to), in
+  // case the pre-import above ever doesn't short-circuit pdfjs's internal
+  // fake-worker setup for some module-instance reason. Converted through
+  // pathToFileURL because a bare filesystem path isn't a valid ESM import
+  // specifier on Windows.
+  const requireFromHere = createRequire(import.meta.url);
+  const workerPath = requireFromHere.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs");
+  pdfjs.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
+
+  const loadingTask = pdfjs.getDocument({
     data: new Uint8Array(buffer),
     useWorkerFetch: false,
     disableFontFace: true,
