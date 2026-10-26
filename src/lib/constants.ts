@@ -17,7 +17,9 @@ export const EMBEDDING_BATCH_SIZE = 50;
 
 // Chat/generation model used for the "ask" endpoint. Centralized here so
 // bumping to a newer Gemini model is a one-line change.
-export const CHAT_MODEL = "gemini-2.5-flash";
+// gemini-2.5-flash was retired for new API keys (Google's error pointed new
+// accounts at gemini-3.8-flash instead); switched to that.
+export const CHAT_MODEL = "gemini-3.8-flash";
 
 // Chunking targets. Tokens are approximated as (words / 0.75), the common
 // heuristic for English text, so we never need to pull in a full tokenizer

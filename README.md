@@ -65,7 +65,7 @@ migration can add an HNSW index, do that only after confirming it's wanted.
 
 Create one at [aistudio.google.com/apikey](https://aistudio.google.com/apikey).
 Used for both embeddings (`gemini-embedding-001`) and the answer model
-(`gemini-2.5-flash`, see `src/lib/constants.ts` to change it).
+(`gemini-3.8-flash`, see `src/lib/constants.ts` to change it).
 
 ## 4. Configure environment variables
 
