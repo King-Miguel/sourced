@@ -28,6 +28,7 @@ export function WorkspaceApp() {
   const [documents, setDocuments] = useState<DocumentRow[] | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [question, setQuestion] = useState("");
   const [ask, setAsk] = useState<AskState>({ phase: "idle" });
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -74,6 +75,16 @@ export function WorkspaceApp() {
       setUploadError("Upload failed. Check your connection and try again.");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/documents/${id}`, { method: "DELETE" });
+      if (res.ok) await loadDocuments();
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -194,6 +205,14 @@ export function WorkspaceApp() {
               <div className="flex items-center gap-3 text-xs">
                 <StatusBadge status={doc.status} />
                 <span className="text-slate-400">{doc.chunk_count} chunks</span>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(doc.id)}
+                  disabled={deletingId === doc.id}
+                  className="text-slate-400 hover:text-red-600 disabled:opacity-50"
+                >
+                  {deletingId === doc.id ? "Removing..." : "Remove"}
+                </button>
               </div>
             </div>
           ))}
