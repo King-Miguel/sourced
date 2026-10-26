@@ -20,6 +20,14 @@ export interface Citation {
   documentName: string;
   pageNumber: number | null;
   similarity: number;
+  snippet: string;
+}
+
+const SNIPPET_LENGTH = 180;
+
+function makeSnippet(content: string): string {
+  const trimmed = content.trim();
+  return trimmed.length > SNIPPET_LENGTH ? `${trimmed.slice(0, SNIPPET_LENGTH).trim()}...` : trimmed;
 }
 
 export async function POST(request: Request) {
@@ -104,6 +112,7 @@ export async function POST(request: Request) {
       documentName: row.document_name,
       pageNumber: row.page_number,
       similarity: row.similarity,
+      snippet: makeSnippet(row.content),
     }))
   );
 
