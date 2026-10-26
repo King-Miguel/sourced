@@ -130,6 +130,17 @@ export function WorkspaceApp() {
         text += decoder.decode(value, { stream: true });
         setAsk({ phase: "answer", text, citations });
       }
+
+      // The model stream can end with zero characters without ever raising
+      // an HTTP-level error (a failed generation mid-stream looks identical
+      // to "nothing to say" from here). Don't leave a silently blank answer
+      // box: surface it as a visible failure instead.
+      if (text.trim().length === 0) {
+        setAsk({
+          phase: "error",
+          message: "The AI didn't return an answer. Please try asking again.",
+        });
+      }
     } catch {
       setAsk({ phase: "error", message: "Something went wrong while asking. Try again." });
     }

@@ -40,5 +40,16 @@ export function streamAnswer(question: string, contextChunks: ContextChunk[]) {
     model: google(CHAT_MODEL),
     system: buildSystemPrompt(contextChunks),
     prompt: question,
+    // The AI SDK does NOT surface errors on the plain text stream that
+    // toTextStreamResponse() sends to the client: if the model call fails
+    // mid-stream (bad key, rate limit, quota, safety block, transient
+    // network error), the response just silently ends with whatever text
+    // was produced so far, often none, with no error anywhere. onError is
+    // the only hook that sees these failures, so log it loudly here; this
+    // is the difference between "no answer appeared" being a mystery and
+    // being a one-line log message.
+    onError: ({ error }) => {
+      console.error("[ask] streamText failed while generating an answer:", error);
+    },
   });
 }
