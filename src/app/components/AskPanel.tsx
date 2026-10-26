@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Icon } from "@/app/components/Icon";
 import { estimateTokenCount } from "@/lib/formatRelative";
 
@@ -18,14 +18,19 @@ type AskState =
   | { phase: "refused"; message: string; bestSimilarity: number }
   | { phase: "error"; message: string };
 
+const SUGGESTED_PROMPTS = [
+  { icon: "subject", label: "Summarize this document" },
+  { icon: "event", label: "What are the key dates mentioned?" },
+  { icon: "checklist", label: "List the main requirements or rules" },
+];
+
 export function AskPanel() {
   const [question, setQuestion] = useState("");
+  const [lastQuestion, setLastQuestion] = useState("");
   const [ask, setAsk] = useState<AskState>({ phase: "idle" });
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  async function submit() {
-    const trimmed = question.trim();
-    if (!trimmed) return;
-
+  async function runQuery(trimmed: string) {
     setAsk({ phase: "asking" });
 
     try {
@@ -97,6 +102,19 @@ export function AskPanel() {
     }
   }
 
+  function submit() {
+    const trimmed = question.trim();
+    if (!trimmed) return;
+    setLastQuestion(trimmed);
+    setQuestion("");
+    runQuery(trimmed);
+  }
+
+  function fillPrompt(text: string) {
+    setQuestion(text);
+    textareaRef.current?.focus();
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -116,6 +134,25 @@ export function AskPanel() {
       </div>
 
       <div className="border-b border-slate-100 p-6">
+        <div className="mb-3.5">
+          <p className="mb-2 text-[11px] font-medium tracking-wide text-slate-400 uppercase">
+            Suggested prompts
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {SUGGESTED_PROMPTS.map((prompt) => (
+              <button
+                key={prompt.label}
+                type="button"
+                onClick={() => fillPrompt(prompt.label)}
+                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 transition-colors hover:border-slate-300 hover:bg-slate-100"
+              >
+                <Icon name={prompt.icon} className="text-sm! text-slate-400" />
+                {prompt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -124,6 +161,7 @@ export function AskPanel() {
           className="space-y-2"
         >
           <textarea
+            ref={textareaRef}
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={handleKeyDown}
@@ -149,18 +187,34 @@ export function AskPanel() {
 
       <div className="p-6">
         {ask.phase === "idle" && (
-          <p className="text-sm text-slate-400">Answers will appear here, with citations.</p>
+          <div className="flex flex-col items-center py-4 text-center">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
+              <Icon name="chat" className="text-slate-500" />
+            </div>
+            <p className="text-sm font-medium text-slate-700">Ask a question to get started</p>
+            <p className="mt-1 max-w-xs text-xs text-slate-400">
+              Answers are generated only from your uploaded documents, with exact citations.
+            </p>
+          </div>
+        )}
+
+        {ask.phase !== "idle" && (
+          <div className="mb-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+            <p className="text-[11px] font-semibold tracking-wide text-indigo-600 uppercase">You asked</p>
+            <p className="mt-1 text-sm text-slate-700">{lastQuestion}</p>
+          </div>
         )}
 
         {ask.phase === "asking" && (
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-indigo-400" />
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <Icon name="progress_activity" className="animate-spin text-base! text-slate-400" />
             Searching your documents...
           </div>
         )}
 
         {ask.phase === "answer" && (
           <div>
+            <p className="mb-1 text-[11px] font-semibold tracking-wide text-indigo-600 uppercase">Sourced</p>
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-800">
               {ask.text}
               {ask.streaming && <span className="streaming-caret" />}
@@ -174,8 +228,8 @@ export function AskPanel() {
                     Sources
                   </p>
                   {topSimilarity !== undefined && (
-                    <span className="text-xs text-slate-400">
-                      Top match similarity: {topSimilarity.toFixed(2)}
+                    <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-slate-500">
+                      Top match similarity: <strong className="font-semibold text-slate-700">{topSimilarity.toFixed(2)}</strong>
                     </span>
                   )}
                 </div>
@@ -213,10 +267,19 @@ export function AskPanel() {
 
         {ask.phase === "error" && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3">
-            <p className="flex items-center gap-1.5 text-sm font-medium text-red-700">
-              <Icon name="error" className="text-base!" />
-              {ask.message}
-            </p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="flex items-center gap-1.5 text-sm font-medium text-red-700">
+                <Icon name="error" className="text-base!" />
+                {ask.message}
+              </p>
+              <button
+                type="button"
+                onClick={() => runQuery(lastQuestion)}
+                className="shrink-0 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
+              >
+                Retry
+              </button>
+            </div>
           </div>
         )}
       </div>

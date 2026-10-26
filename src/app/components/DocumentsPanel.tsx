@@ -139,12 +139,16 @@ export function DocumentsPanel() {
               isDragging ? "border-indigo-400 bg-indigo-50/50" : "border-slate-300 hover:border-slate-400"
             }`}
           >
-            <Icon name="upload_file" className="mb-2 text-slate-400" />
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
+              <Icon name="upload_file" className="text-slate-500" />
+            </div>
             <p className="text-sm font-medium text-slate-700">
               Drop a PDF or TXT file here, or <span className="text-indigo-600 underline">browse</span>
             </p>
-            <p className="mt-1 text-xs text-slate-400">
-              Max {Math.round(MAX_UPLOAD_BYTES / (1024 * 1024))} MB per file.
+            <p className="mt-2.5 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+              <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">PDF</span>
+              <span className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono">TXT</span>
+              <span>Max {Math.round(MAX_UPLOAD_BYTES / (1024 * 1024))} MB per file</span>
             </p>
             <input
               ref={fileInputRef}
@@ -158,7 +162,9 @@ export function DocumentsPanel() {
           <div className="rounded-md border border-slate-200 p-3">
             <div className="flex items-center justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
-                <Icon name={fileIconFor(selectedFile.name)} className="shrink-0 text-slate-400" />
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+                  <Icon name={fileIconFor(selectedFile.name)} className="text-slate-500" />
+                </div>
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-slate-800">{selectedFile.name}</p>
                   <p className="text-xs text-slate-400">{formatBytes(selectedFile.size)}</p>
@@ -223,7 +229,7 @@ export function DocumentsPanel() {
         {documents?.length === 0 && (
           <div className="px-6 py-12 text-center">
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-slate-50">
-              <Icon name="folder_open" className="text-slate-400" />
+              <Icon name="folder_open" className="text-slate-500" />
             </div>
             <p className="text-sm font-medium text-slate-700">No documents yet. Upload one to get started.</p>
           </div>
@@ -234,7 +240,9 @@ export function DocumentsPanel() {
             {documents.map((doc) => (
               <div key={doc.id} className="flex items-start justify-between gap-3 px-6 py-4">
                 <div className="flex min-w-0 items-start gap-3">
-                  <Icon name={fileIconFor(doc.file_name)} className="mt-0.5 shrink-0 text-slate-400" />
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+                    <Icon name={fileIconFor(doc.file_name)} className="text-slate-500" />
+                  </div>
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="truncate text-sm font-medium text-slate-800">{doc.file_name}</p>
@@ -270,12 +278,16 @@ export function DocumentsPanel() {
 }
 
 function StatusBadge({ status }: { status: DocumentRow["status"] }) {
-  const styles: Record<DocumentRow["status"], string> = {
-    processing: "bg-amber-50 text-amber-700 border-amber-200",
-    ready: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    failed: "bg-red-50 text-red-700 border-red-200",
+  const styles: Record<DocumentRow["status"], { chip: string; dot: string }> = {
+    processing: { chip: "bg-amber-50 text-amber-700 border-amber-200", dot: "bg-amber-500" },
+    ready: { chip: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
+    failed: { chip: "bg-red-50 text-red-700 border-red-200", dot: "bg-red-500" },
   };
+  const { chip, dot } = styles[status];
   return (
-    <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${styles[status]}`}>{status}</span>
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs font-medium ${chip}`}>
+      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} />
+      {status}
+    </span>
   );
 }
